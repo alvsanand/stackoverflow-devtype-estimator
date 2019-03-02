@@ -1,0 +1,14 @@
+artifact_uri: /home/alvsanand/work/workspace/stackoverflow-devtype-estimator/mlruns/0/7d64c112e0964a5fb44892d986c726db/artifacts
+end_time: 1551553963531
+entry_point_name: ''
+experiment_id: 0
+lifecycle_stage: active
+name: ''
+run_uuid: 7d64c112e0964a5fb44892d986c726db
+source_name: /home/alvsanand/work/workspace/stackoverflow-devtype-estimator/train.py
+source_type: 4
+source_version: ''
+start_time: 1551553959333
+status: 4
+tags: []
+user_id: alvsanand
