@@ -12,7 +12,6 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
 
 import mlflow
 import mlflow.sklearn
@@ -57,11 +56,11 @@ _races = {
 _ages = {
     'Under 18 years old': 0,
     '18 - 24 years old': 1,
-    '25 - 34 years old': 3,
-    '35 - 44 years old': 4,
-    '45 - 54 years old': 5,
-    '55 - 64 years old': 6,
-    '65 years or older': 7,
+    '25 - 34 years old': 2,
+    '35 - 44 years old': 3,
+    '45 - 54 years old': 4,
+    '55 - 64 years old': 5,
+    '65 years or older': 6,
 }
 
 
@@ -119,7 +118,7 @@ if __name__ == "__main__":
 
     raw_data = pd.read_csv(_dataset_path)
     log.info("Dataset size: {0}".format(raw_data.size))
-    # print_values(raw_data)
+    # log.info(raw_data)
 
     data = map_values(filter_values(raw_data))
     log.info("Filtered dataset size: {0}".format(data.size))
@@ -133,29 +132,26 @@ if __name__ == "__main__":
     train_y = train[label_cols]
     test_y = test[label_cols]
 
-    max_depth = float(sys.argv[1]) if len(sys.argv) > 1 else 5
-    n_estimators = float(sys.argv[2]) if len(sys.argv) > 2 else 10
-    max_features = float(sys.argv[2]) if len(sys.argv) > 3 else 1
+    max_depth = float(sys.argv[1]) if len(sys.argv) > 1 else 50
+    n_estimators = float(sys.argv[2]) if len(sys.argv) > 2 else 1000
 
     with mlflow.start_run():
         lr = RandomForestClassifier(max_depth=max_depth,
-                                    n_estimators=n_estimators,
-                                    max_features=max_features)
+                                    n_estimators=n_estimators)
         lr.fit(train_x, train_y)
 
         predicted_qualities = lr.predict(test_x)
 
         (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
 
-        log.info("RandomForestClassifier model({0}, {1}, {2}):".format(
-            max_depth, n_estimators, max_features))
+        log.info("RandomForestClassifier model({0}, {1}):".format(
+            max_depth, n_estimators))
         log.info("  RMSE: %s" % rmse)
         log.info("  MAE: %s" % mae)
         log.info("  R2: %s" % r2)
 
         mlflow.log_param("max_depth", max_depth)
         mlflow.log_param("n_estimators", n_estimators)
-        mlflow.log_param("max_features", max_features)
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
