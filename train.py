@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
 import mlflow
 import mlflow.sklearn
@@ -23,11 +24,15 @@ _tmp_dir = '/tmp'
 _dataset_url = (
     'https://drive.google.com'
     '/uc?export=download&id=1_9On2-nsBQIw3JiY43sWbrF8EjrqrR4U'
-    )
+)
 _data_file = 'survey_results_public.csv'
 _dataset_path = os.path.join(_tmp_dir, _data_file)
-_dev_types_column = 'DevType'
-_data_columns = ['Gender', 'RaceEthnicity', 'Age']
+_cols = {
+    'dev_type': 'DevType',
+    'gender': 'Gender',
+    'race': 'RaceEthnicity',
+    'age': 'Age',
+}
 _dev_types = {
     'dbadm': 'Database administrator',
     'backdev': 'Back-end developer',
@@ -36,6 +41,36 @@ _dev_types = {
     'devops': 'DevOps specialist',
     'datanal': 'Data or business analyst',
 }
+_genders = {
+    'Female': 0,
+    'Male': 1,
+}
+_races = {
+    'Black or of African descent': 0,
+    'East Asian': 1,
+    'Hispanic or Latino/Latina': 2,
+    'Middle Eastern': 3,
+    'Native American, Pacific Islander, or Indigenous Australian': 4,
+    'South Asian': 5,
+    'White or of European descent': 6,
+}
+_ages = {
+    'Under 18 years old': 0,
+    '18 - 24 years old': 1,
+    '25 - 34 years old': 3,
+    '35 - 44 years old': 4,
+    '45 - 54 years old': 5,
+    '55 - 64 years old': 6,
+    '65 years or older': 7,
+}
+
+
+def print_values(data):
+    for c in data:
+        values = set(reduce(list.__add__,
+                            map(lambda t: str(t).split(";"),
+                                data[c].unique().tolist())))
+        log.info("{0} -> {1}".format(c, values))
 
 
 def download_dataset():
@@ -47,6 +82,26 @@ def download_dataset():
         zipDocument.extractall(_tmp_dir)
 
         log.info("Downloaded dataset")
+
+
+def filter_values(data):
+    return data[_cols.values()][
+        data[_cols['gender']].isin(['Male', 'Female'])][
+        data[_cols['race']].isin(_races.keys())].dropna()
+
+
+def map_values(data):
+    data = data.replace({
+                        _cols['gender']: _genders,
+                        _cols['race']: _races,
+                        _cols['age']: _ages,
+                        })
+
+    for k, v in _dev_types.items():
+        data[k] = data[_cols['dev_type']].str.contains(v)
+        data[k] = data[k].map({True: 1, False: 0})
+
+    return data.drop(_cols['dev_type'], axis=1)
 
 
 def eval_metrics(actual, pred):
@@ -63,29 +118,20 @@ if __name__ == "__main__":
     download_dataset()
 
     raw_data = pd.read_csv(_dataset_path)
-    data = raw_data[_data_columns + [_dev_types_column]].dropna()
-
     log.info("Dataset size: {0}".format(raw_data.size))
+    # print_values(raw_data)
+
+    data = map_values(filter_values(raw_data))
     log.info("Filtered dataset size: {0}".format(data.size))
-
-    dev_types = set(reduce(list.__add__,
-                           map(lambda t: t.split(";"),
-                               data["DevType"].unique().tolist())))
-
-    for k, v in _dev_types.items():
-        data[k] = data[_dev_types_column].str.contains(v)
-        data[k] = data[k].map({True: 'YES', False: 'NO'})
-
-    print(data)
 
     train, test = train_test_split(data)
 
-    label_columns = list(_dev_types.keys())
+    label_cols = list(_dev_types.keys())
 
-    train_x = train.drop(_data_columns, axis=1)
-    test_x = test.drop(label_columns, axis=1)
-    train_y = train[label_columns]
-    test_y = test[label_columns]
+    train_x = train.drop(label_cols, axis=1)
+    test_x = test.drop(label_cols, axis=1)
+    train_y = train[label_cols]
+    test_y = test[label_cols]
 
     max_depth = float(sys.argv[1]) if len(sys.argv) > 1 else 5
     n_estimators = float(sys.argv[2]) if len(sys.argv) > 2 else 10
