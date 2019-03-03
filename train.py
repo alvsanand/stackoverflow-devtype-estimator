@@ -33,7 +33,12 @@ _cols = {
     'dev_type': 'DevType',
 }
 _dev_types = {
+    'dbadm': 'Database administrator',
+    'backdev': 'Back-end developer',
+    'datasci': 'Data scientist or machine learning specialist',
+    'manager': 'Product manager',
     'devops': 'DevOps specialist',
+    'datanal': 'Data or business analyst',
 }
 _genders = {
     'Female': 0,
