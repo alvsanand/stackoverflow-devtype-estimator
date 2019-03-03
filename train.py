@@ -27,18 +27,13 @@ _dataset_url = (
 _data_file = 'survey_results_public.csv'
 _dataset_path = os.path.join(_tmp_dir, _data_file)
 _cols = {
-    'dev_type': 'DevType',
-    'gender': 'Gender',
-    'race': 'RaceEthnicity',
     'age': 'Age',
+    'gender': 'Gender',
+    # 'race': 'RaceEthnicity',
+    'dev_type': 'DevType',
 }
 _dev_types = {
-    'dbadm': 'Database administrator',
-    'backdev': 'Back-end developer',
-    'datasci': 'Data scientist or machine learning specialist',
-    'manager': 'Product manager',
     'devops': 'DevOps specialist',
-    'datanal': 'Data or business analyst',
 }
 _genders = {
     'Female': 0,
@@ -84,15 +79,17 @@ def download_dataset():
 
 
 def filter_values(data):
-    return data[_cols.values()][
-        data[_cols['gender']].isin(['Male', 'Female'])][
-        data[_cols['race']].isin(_races.keys())].dropna()
+    data = data[_cols.values()]
+    data = data[data[_cols['gender']].isin(['Male', 'Female'])]
+    # data = data[data[_cols['race']].isin(_races.keys())]
+
+    return data.dropna()
 
 
 def map_values(data):
     data = data.replace({
                         _cols['gender']: _genders,
-                        _cols['race']: _races,
+                        # _cols['race']: _races,
                         _cols['age']: _ages,
                         })
 
@@ -132,8 +129,8 @@ if __name__ == "__main__":
     train_y = train[label_cols]
     test_y = test[label_cols]
 
-    max_depth = float(sys.argv[1]) if len(sys.argv) > 1 else 50
-    n_estimators = float(sys.argv[2]) if len(sys.argv) > 2 else 1000
+    max_depth = float(sys.argv[1]) if len(sys.argv) > 1 else 5
+    n_estimators = float(sys.argv[2]) if len(sys.argv) > 2 else 10
 
     with mlflow.start_run():
         lr = RandomForestClassifier(max_depth=max_depth,
